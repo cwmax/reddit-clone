@@ -3,6 +3,7 @@ import datetime
 from sqlalchemy import Column, Integer, String, TIMESTAMP
 
 from .core import Base
+from app import db
 
 
 class Users(Base):
@@ -12,4 +13,3 @@ class Users(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     user_name = Column(String, unique=True, nullable=False, index=True)
     password = Column(String, nullable=False)
-

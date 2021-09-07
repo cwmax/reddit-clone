@@ -9,7 +9,6 @@ class Comments(Base):
     __tablename__ = 'comments'
     id = Column(Integer,primary_key=True, autoincrement=True)
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
-    title = Column(String, unique=True, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     content = Column(String, nullable=False)
     post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)

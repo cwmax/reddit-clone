@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <p>{{ post_title }}</p>
+    <p>{{ post_content }}</p>
+    <p><a href="{{ url_for('main.submit_comment', site_name=site_name, post_id=post_id, parent_comment=0) }}">Submit comment</a></p>
+    {% for current_comment in comment_order[0] %}
+    {% include('main/base_comment.html') %}
+    {% endfor %}
+{% endblock %}

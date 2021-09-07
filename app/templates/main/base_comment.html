@@ -1,0 +1,7 @@
+{% with indent_level = comment_indent_level[current_comment] %}
+<p style="text-indent: {{(20*indent_level)|string}}px">{{comment_contents[current_comment].content}}</p>
+<br>
+{% endwith %}
+{% for current_comment in comment_order[current_comment] %}
+{% include('main/base_comment.html') %}
+{% endfor%}

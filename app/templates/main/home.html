@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <p><a href="{{ url_for('main.create_site') }}">Create site</a></p>
+{% endblock %}
