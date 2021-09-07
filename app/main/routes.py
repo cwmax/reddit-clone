@@ -1,6 +1,9 @@
+from flask import render_template, redirect, url_for
+
 from app.main import bp
 
 
-@bp.get('/')
+@bp.route('/')
+@bp.route('/home')
 def home():
-    return 'Hello World'
+    return 'hello world'
