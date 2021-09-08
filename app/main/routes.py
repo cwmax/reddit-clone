@@ -6,12 +6,14 @@ from flask_login import login_required, current_user
 
 from app.main.forms import CreateSiteForm, CreatePostForm, CommentForm
 from app.main import bp
-from app.models import Sites, Posts, Comments, Users
+from app.models import Sites, Posts, Comments, Users, CommentEvents
 from app.main.validators.site_validators import validate_site_name
 from app.main.submit_helpers import add_to_session_and_submit
 from app.main.validators.post_validators import validate_post_site_ids
 from app.main.formatters.comment_formatters import format_comments
 from app import db
+from app.main.validators.comment_vote_validators import check_user_comment_existing_vote
+from app.main.submit_helpers import submit_and_redirect_or_rollback
 
 
 def validate_new_site_name(site_name):
@@ -30,6 +32,17 @@ def create_and_submit_site(site_name):
                  created_at=datetime.datetime.utcnow(),
                  is_deleted=False)
     if add_to_session_and_submit(site, 'submit_site'):
+        return True
+    return False
+
+
+def create_and_submit_new_vote(comment_id: int, event_value: str) -> bool:
+    commentEvent = CommentEvents(created_at=datetime.datetime.utcnow(),
+                                 event_name='vote',
+                                 user_id=current_user.id,
+                                 comment_id=comment_id,
+                                 event_value=event_value)
+    if add_to_session_and_submit(commentEvent, 'submit_comment_upvote'):
         return True
     return False
 
@@ -82,6 +95,34 @@ def get_comments_with_user_information_for_posts(post: Posts) -> Optional[list]:
     return res
 
 
+def update_comment_event_value(res: CommentEvents, new_event_value: str) -> None:
+    res.event_value = new_event_value
+    res.created_at = datetime.datetime.utcnow()
+    ok = submit_and_redirect_or_rollback(f'{new_event_value}_comment')
+    if not ok:
+        flash(f'Error encountered when switching to {new_event_value}')
+    return
+
+
+def update_comment_event_if_needed(comment_id: int, new_event_value: str) -> (bool, bool):
+    res, has_existing_vote = check_user_comment_existing_vote(comment_id)
+    if not has_existing_vote:
+        ok = create_and_submit_new_vote(comment_id, new_event_value)
+        if not ok:
+            flash('Error encountered when upvoting comment')
+            return False, False
+        return True, False
+
+    if res.event_value == new_event_value:
+        return False, False
+
+    update_comment_event_value(res, new_event_value)
+    return True, True
+
+
+def update_comment_vote_cache(comment_id: int, increment_value: int) -> None:
+    pass
+
 @bp.route('/')
 @bp.route('/home')
 def home():
@@ -90,7 +131,7 @@ def home():
 
 @bp.route('/s/<site_name>', methods=['GET', 'POST'])
 def subsite(site_name: str):
-    site = Sites.query.filter_by(name=site_name)
+    site = Sites.query.filter_by(name=site_name).first()
     if site is None:
         flash(f"site {site_name} doesn't exist")
         return redirect(url_for('main.home'))
@@ -161,5 +202,34 @@ def create_site():
 
     return render_template('main/create_site.html', form=form)
 
+
+@bp.get('/s/<site_name>/<post_id>/<comment_id>/upvote-comment')
+@login_required
+def upvote_comment(site_name: str, post_id: str, comment_id: str):
+    comment_id = int(comment_id)
+    post_id = int(post_id)
+    redirect_url = url_for('main.post_page', site_name=site_name, post_id=post_id)
+
+    vote_added, value_updated = update_comment_event_if_needed(comment_id, 'upvote')
+    if value_updated:
+        vote_change = 2 if value_updated else 1
+        update_comment_vote_cache(comment_id, vote_change)
+
+    return redirect(redirect_url)
+
+
+@bp.get('/s/<site_name>/<post_id>/<comment_id>/downvote-comment')
+@login_required
+def downvote_comment(site_name: str, post_id: str, comment_id: str):
+    comment_id = int(comment_id)
+    post_id = int(post_id)
+    redirect_url = url_for('main.post_page', site_name=site_name, post_id=post_id)
+
+    vote_added, value_updated = update_comment_event_if_needed(comment_id, 'downvote')
+    if value_updated:
+        vote_change = -2 if value_updated else -1
+        update_comment_vote_cache(comment_id, vote_change)
+
+    return redirect(redirect_url)
 
 # TODO, make sure to use one redis connection over several commands, apparently it's a best practice

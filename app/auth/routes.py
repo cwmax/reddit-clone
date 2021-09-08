@@ -13,14 +13,14 @@ from app.auth.validators.validate_users import (validate_new_username_and_email_
                                                 validate_user_input_correct)
 
 
-def create_and_submit_user(user_name: str, email: str, password_1: str) -> (bool, ):
+def create_and_submit_user(user_name: str, email: str, password_1: str) -> (Users, bool):
     user = Users(user_name=user_name,
                  email=email,
                  created_at=datetime.datetime.utcnow())
     user.hash_password(password_1)
     if add_to_session_and_submit(user, 'submit_user'):
-        return True
-    return False
+        return user, True
+    return user, False
 
 
 def validate_new_user_data(user_name: str, email: str, password_1: str, password_2: str) -> bool:
@@ -62,8 +62,9 @@ def register():
         email = form.email.data
         if not validate_new_user_data(user_name, email, password_1, password_2):
             return redirect(url_for('auth.register'))
-        if create_and_submit_user(user_name, email, password_1):
-            login_user()
+        user, ok = create_and_submit_user(user_name, email, password_1)
+        if ok:
+            login_user(user)
             return redirect(url_for('main.home'))
 
     return render_template('auth/register.html', form=form)

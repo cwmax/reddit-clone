@@ -28,3 +28,4 @@ class CommentEvents(Base):
 
 
 Index('comment_id_event_name_idx', CommentEvents.comment_id, CommentEvents.event_name)
+Index('comment_user_event_name_idk', CommentEvents.id, CommentEvents.user_id, CommentEvents.event_name)

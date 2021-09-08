@@ -1,5 +1,17 @@
 {% with indent_level = comment_indent_level[current_comment] %}
-<p style="text-indent: {{(20*indent_level)|string}}px">{{comment_contents[current_comment].content}}
+<p style="text-indent: {{(20*indent_level)|string}}px">
+    {{comment_contents[current_comment].upvote_count}}
+    {% if comment_contents[current_comment].user_comment_upvote is none %}
+        <a href="{{ url_for('main.upvote_comment', site_name=site_name, post_id=post_id, comment_id=current_comment) }}">Upvote</a>
+        <a href="{{ url_for('main.downvote_comment', site_name=site_name, post_id=post_id, comment_id=current_comment) }}">Downvote</a>
+    {% elif comment_contents[current_comment].user_comment_upvote == True %}
+        Upvote
+        <a href="{{ url_for('main.downvote_comment', site_name=site_name, post_id=post_id, comment_id=current_comment) }}">Downvote</a>
+    {% else %}
+        <a href="{{ url_for('main.upvote_comment', site_name=site_name, post_id=post_id, comment_id=current_comment) }}">Upvote</a>
+        Downvote
+    {% endif %}
+    {{comment_contents[current_comment].content}}
 <a href="{{ url_for('main.submit_comment', site_name=site_name, post_id=post_id, parent_comment=current_comment) }}">Reply</a></p>
 <br>
 {% endwith %}

@@ -7,7 +7,7 @@ from .core import Base
 
 class Comments(Base):
     __tablename__ = 'comments'
-    id = Column(Integer,primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     content = Column(String, nullable=False)
