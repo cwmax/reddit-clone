@@ -1,0 +1,21 @@
+{"4": {
+  "content": "test second comment",
+  "username": "test",
+  "upvote_count": 0},
+  "5": {
+  "content": "test comment 3",
+  "username": "mrmax",
+  "upvote_count": 0},
+  "6": {
+  "content": "test nested comment 1",
+  "username": "mrmax",
+  "upvote_count": 0},
+  "8": {
+  "content": "test nested comment 2",
+  "username": "test",
+  "upvote_count": 0},
+  "7": {
+  "content": "test nested comment 3",
+  "username": "mrmax",
+  "upvote_count": 0}
+}

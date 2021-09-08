@@ -1,0 +1,9 @@
+{
+  "id": 8,
+  "created_at": "2021-09-07 13:17:21.833731",
+  "author_id": 2,
+  "content": "test nested comment 2",
+  "post_id": 1,
+  "parent_comment_id": 6,
+  "is_deleted": false
+}

@@ -146,3 +146,6 @@ def create_site():
         create_and_submit_site(site_name, redirect_url)
 
     return render_template('main/create_site.html', form=form)
+
+
+# TODO, make sure to use one redis connection over several commands, apparently it's a best practice
