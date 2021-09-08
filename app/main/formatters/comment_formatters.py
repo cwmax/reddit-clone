@@ -1,28 +1,42 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple, Optional
 
-from sqlalchemy import func, text
+from sqlalchemy import text
 
 from app.schemas.comments import CommentInfo
-from app.models import Comments, Users, CommentEvents
+from app.models import Comments, Users
 from app import db
 from app.main.validators.comment_vote_validators import check_user_comment_existing_vote
 
 
+def tally_final_upvotes_and_downvotes(res: List[Tuple[str, int]]):
+    upvotes = 0
+    downvotes = 0
+
+    if res is None:
+        return upvotes, downvotes
+    if len(res) == 0:
+        return upvotes, downvotes
+
+    for vote, value in res:
+        if vote == 'upvote':
+            upvotes += value
+        elif vote == 'downvote':
+            downvotes += value
+
+    return upvotes, downvotes
+
+
 def get_comment_final_upvote_count(comment_id: int) -> int:
-    vote_count_query = """SELECT sum(sub.vote_value) as vote_count
-    FROM (SELECT CASE WHEN event_value = 'upvote' THEN 1
-                 WHEN event_value = 'downvote' then -1 END as vote_value
+    vote_count_query = """SELECT event_value, count(*) as vote_count
         from comment_events
         where comment_id = :comment_id AND event_name = 'vote'
-    ) sub"""
+        group by event_value"""
     with db.engine.connect() as conn:
-        res = conn.execute(text(vote_count_query), {'comment_id': comment_id}).fetchone()
-    if res is None:
-        return 0
-    vote_count = res[0]
-    if vote_count is None:
-        return 0
-    return vote_count
+        res = conn.execute(text(vote_count_query), {'comment_id': comment_id}).fetchall()
+
+    upvotes, downvotes = tally_final_upvotes_and_downvotes(res)
+
+    return upvotes - downvotes
 
 
 def format_comment_contents_and_order(comment: Comments, user: Users,
