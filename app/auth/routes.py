@@ -1,4 +1,3 @@
-import logging
 import datetime
 
 from flask import render_template, flash, redirect, url_for, request
@@ -8,7 +7,28 @@ from werkzeug.urls import url_parse
 from app.auth.forms import LoginForm, RegisterForm
 from . import bp
 from app.models import Users
-from app import db
+from app.main.submit_helpers import add_to_session_and_submit
+from app.auth.validators.validate_users import (validate_new_username_and_email_unique,
+                                                validate_passwords_match,
+                                                validate_user_input_correct)
+
+
+def create_and_submit_user(user_name: str, email: str, password_1: str) -> (bool, ):
+    user = Users(user_name=user_name,
+                 email=email,
+                 created_at=datetime.datetime.utcnow())
+    user.hash_password(password_1)
+    if add_to_session_and_submit(user, 'submit_user'):
+        return True
+    return False
+
+
+def validate_new_user_data(user_name: str, email: str, password_1: str, password_2: str) -> bool:
+    if not validate_passwords_match(password_1, password_2):
+        return False
+    if not validate_new_username_and_email_unique(user_name, email):
+        return False
+    return True
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -17,17 +37,16 @@ def login():
         return redirect(url_for('main.home'))
     form = LoginForm()
     if form.validate_on_submit():
-        flash(f'Login request for user {form.username.data}, '
-              f'remember_me={form.remember_me.data}')
         user = Users.query.filter_by(user_name=form.username.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
+        if not validate_user_input_correct(form):
             return redirect(url_for('auth.login'))
         login_user(user, remember=form.remember_me.data)
+
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('main.home')
         return redirect(next_page)
+
     return render_template('auth/login.html', title='Sign In', form=form)
 
 
@@ -41,30 +60,12 @@ def register():
         password_2 = form.password_repeat.data
         user_name = form.username.data
         email = form.email.data
-        if password_1 != password_2:
-            flash("Passwords don't match")
+        if not validate_new_user_data(user_name, email, password_1, password_2):
             return redirect(url_for('auth.register'))
-
-        if Users.query.filter_by(user_name=user_name).first() is not None:
-            flash('Please use a different username')
-            return redirect(url_for('auth.register'))
-        if Users.query.filter_by(email=email).first() is not None:
-            flash('Please use a different email')
-            return redirect(url_for('auth.register'))
-
-        user = Users(user_name=user_name,
-                     email=email,
-                     created_at=datetime.datetime.utcnow())
-        user.hash_password(password_1)
-        db.session.add(user)
-        try:
-            db.session.commit()
-            login_user(user, remember=True)
+        if create_and_submit_user(user_name, email, password_1):
+            login_user()
             return redirect(url_for('main.home'))
-        except Exception as e:
-            logging.error(f"Encountered exception {str(e)}")
-            flash("Error encountered while creating the account")
-            db.session.rollback()
+
     return render_template('auth/register.html', form=form)
 
 

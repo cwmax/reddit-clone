@@ -3,7 +3,6 @@ import datetime
 from sqlalchemy import Column, Integer, String, TIMESTAMP
 
 from .core import Base
-from app import db
 
 
 class Users(Base):

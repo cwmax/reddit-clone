@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict
+from typing import Optional
 
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
@@ -17,20 +17,21 @@ from app import db
 def validate_new_site_name(site_name):
     if not validate_site_name(site_name):
         flash('Site name can only contain characters')
-        return redirect(url_for('main.create_site'))
+        return False
 
     if Sites.query.filter_by(name=site_name).first() is not None:
         flash('Site already exists')
-        return redirect(url_for('main.create_site'))
+        return False
+    return True
 
 
-def create_and_submit_site(site_name, redirect_url):
+def create_and_submit_site(site_name):
     site = Sites(name=site_name,
                  created_at=datetime.datetime.utcnow(),
                  is_deleted=False)
-
-    if add_to_session_and_submit(site, 'submit_comment'):
-        return redirect(redirect_url)
+    if add_to_session_and_submit(site, 'submit_site'):
+        return True
+    return False
 
 
 def create_and_submit_comment(content, parent_comment_id, post):
@@ -43,7 +44,7 @@ def create_and_submit_comment(content, parent_comment_id, post):
     return add_to_session_and_submit(comment, 'submit_comment')
 
 
-def create_and_submit_post(site: Sites, form: CreatePostForm):
+def create_and_submit_post(site: Sites, form: CreatePostForm) -> (Posts, bool):
     post_title = form.title.data
     post_content = form.content.data
     post = Posts(title=post_title,
@@ -52,9 +53,9 @@ def create_and_submit_post(site: Sites, form: CreatePostForm):
                  is_deleted=False,
                  author_id=current_user.id,
                  site_id=site.id)
-    redirect_url = url_for('main.post', site_name=site.name, post_id=post.id)
     if add_to_session_and_submit(post, 'submit_post'):
-        return redirect(redirect_url)
+        return post, True
+    return post, False
 
 
 def get_post_and_site(post_id: str, site_name: str) -> (Posts, Sites):
@@ -65,12 +66,20 @@ def get_post_and_site(post_id: str, site_name: str) -> (Posts, Sites):
     return post, site
 
 
-def validate_post_and_site(post: Posts, site: Sites):
+def validate_post_and_site(post: Posts, site: Sites) -> bool:
     msg, ok = validate_post_site_ids(post, site)
     if not ok:
         flash(msg)
-        return redirect(url_for('main.site', site_name=site.name))
+        return False
+    return True
 
+
+def get_comments_with_user_information_for_posts(post: Posts) -> Optional[list]:
+    res = db.session.query(Comments, Users).filter_by(post_id=post.id) \
+        .join(Users, Users.id == Comments.author_id) \
+        .order_by(Comments.parent_comment_id.asc(), Comments.created_at.asc()) \
+        .all()
+    return res
 
 
 @bp.route('/')
@@ -90,14 +99,12 @@ def subsite(site_name: str):
 
 
 @bp.route('/s/<site_name>/<post_id>', methods=['GET', 'POST'])
-def post(site_name: str, post_id: int):
+def post_page(site_name: str, post_id: int):
     post, site = get_post_and_site(post_id, site_name)
-    validate_post_and_site(post, site)
+    if not validate_post_and_site(post, site):
+        return redirect(url_for('main.site', site_name=site.name))
     # this will be optimized from join instead to cache lookup
-    comments_and_users = db.session.query(Comments, Users).filter_by(post_id=post.id)\
-        .join(Users, Users.id == Comments.author_id)\
-        .order_by(Comments.parent_comment_id.asc(), Comments.created_at.asc())\
-        .all()
+    comments_and_users = get_comments_with_user_information_for_posts(post)
 
     comment_order, comment_contents, comment_indent_level = format_comments(comments_and_users)
     return render_template('main/post.html', post_title=post.title, post_content=post.content,
@@ -114,7 +121,10 @@ def submit_post(site_name: str):
 
     form = CreatePostForm()
     if form.validate_on_submit():
-        create_and_submit_post(site, form)
+        post, ok = create_and_submit_post(site, form)
+        if ok:
+            redirect_url = url_for('main.post_page', site_name=site.name, post_id=post.id)
+            return redirect(redirect_url)
 
     return render_template('main/submit_post.html', form=form, site_name=site_name)
 
@@ -122,13 +132,15 @@ def submit_post(site_name: str):
 @bp.route('/s/<site_name>/<post_id>/submit_comment', methods=['GET', 'POST'])
 def submit_comment(site_name, post_id):
     post, site = get_post_and_site(post_id, site_name)
-    validate_post_and_site(post, site)
+    if not validate_post_and_site(post, site):
+        return redirect(url_for('main.site', site_name=site.name))
+
     parent_comment_id = request.args.get('parent_comment', 0)
-    print('parent_comment_id is:', parent_comment_id)
+
     form = CommentForm()
     if form.validate_on_submit():
         content = form.content.data
-        redirect_url = url_for('main.post', site_name=site_name, post_id=post.id)
+        redirect_url = url_for('main.post_page', site_name=site_name, post_id=post.id)
         if create_and_submit_comment(content, parent_comment_id, post):
             return redirect(redirect_url)
 
@@ -141,9 +153,11 @@ def create_site():
     form = CreateSiteForm()
     if form.validate_on_submit():
         site_name = form.site_name.data.lower()
-        validate_new_site_name(site_name)
+        if not validate_new_site_name(site_name):
+            return redirect(url_for('main.create_site'))
         redirect_url = url_for('main.subsite', site_name=site_name)
-        create_and_submit_site(site_name, redirect_url)
+        if create_and_submit_site(site_name):
+            return redirect(redirect_url)
 
     return render_template('main/create_site.html', form=form)
 

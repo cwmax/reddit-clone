@@ -8,7 +8,7 @@ from .core import Base
 class Sites(Base):
     __tablename__ = 'sites'
     id = Column(Integer, autoincrement=True, primary_key=True)
-    name = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False, index=True, unique=True)
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow, nullable=False)
     is_deleted = Column(Boolean, default=False, nullable=False, index=True)
 
