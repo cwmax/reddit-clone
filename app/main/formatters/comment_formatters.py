@@ -1,48 +1,34 @@
-from typing import Dict, List, Tuple, Optional
-
-from sqlalchemy import text
+from typing import Dict, List, Tuple
 
 from app.schemas.comments import CommentInfo
 from app.models import Comments, Users
-from app import db
+from app import app, redis
 from app.main.validators.comment_vote_validators import check_user_comment_existing_vote
+from app.main.redis_cache_helpers import insert_value_into_redis_from_db, get_comment_final_upvote_count_from_db
 
 
-def tally_final_upvotes_and_downvotes(res: List[Tuple[str, int]]):
-    upvotes = 0
-    downvotes = 0
-
-    if res is None:
-        return upvotes, downvotes
-    if len(res) == 0:
-        return upvotes, downvotes
-
-    for vote, value in res:
-        if vote == 'upvote':
-            upvotes += value
-        elif vote == 'downvote':
-            downvotes += value
-
-    return upvotes, downvotes
-
-
-def get_comment_final_upvote_count(comment_id: int) -> int:
-    vote_count_query = """SELECT event_value, count(*) as vote_count
-        from comment_events
-        where comment_id = :comment_id AND event_name = 'vote'
-        group by event_value"""
-    with db.engine.connect() as conn:
-        res = conn.execute(text(vote_count_query), {'comment_id': comment_id}).fetchall()
-
-    upvotes, downvotes = tally_final_upvotes_and_downvotes(res)
-
-    return upvotes - downvotes
+def get_comment_final_upvote_count(post_id: int, comment_id: int) -> int:
+    name = str(post_id)
+    key = str(comment_id)
+    redis_value = redis.hget(name, key)
+    if redis_value is None:
+        return insert_value_into_redis_from_db(name, key)
+    try:
+        upvote_count = int(redis_value.decode('utf-8'))
+        return upvote_count
+    except ValueError:
+        app.logger.error(f'Encountered non-int value in {name}, {key}, {redis_value}')
+        return get_comment_final_upvote_count_from_db(comment_id)
+    except Exception as e:
+        app.logger.error(f'Encountered unhandled exception {e}')
+        return get_comment_final_upvote_count_from_db(comment_id)
 
 
 def format_comment_contents_and_order(comment: Comments, user: Users,
                                       comment_order: Dict[int, List[int]],
                                       comment_contents: Dict[int, CommentInfo],
-                                      comment_indent_layer: Dict[int, int]) \
+                                      comment_indent_layer: Dict[int, int],
+                                      post_id: int) \
         -> (Dict[int, List[int]], Dict[int, CommentInfo]):
     comment_id = comment.id
     parent_comment_id = comment.parent_comment_id
@@ -51,7 +37,8 @@ def format_comment_contents_and_order(comment: Comments, user: Users,
     if ok:
         user_comment_upvote = True if res.event_value == 'upvote' else False
 
-    upvote_count = get_comment_final_upvote_count(comment_id)
+    upvote_count = get_comment_final_upvote_count(post_id, comment_id)
+
     commentContent = CommentInfo(username=user.user_name,
                                  content=comment.content,
                                  upvote_count=upvote_count,
@@ -67,7 +54,7 @@ def format_comment_contents_and_order(comment: Comments, user: Users,
     return comment_order, comment_contents, comment_indent_layer
 
 
-def format_comments(comments_and_users) -> (Dict[int, List[int]], Dict[int, CommentInfo], Dict[int, int]):
+def format_comments(comments_and_users: list, post_id: int) -> (Dict[int, List[int]], Dict[int, CommentInfo], Dict[int, int]):
     comment_order = {}
     comment_contents = {}
     comment_indent_layer = {}
@@ -76,5 +63,6 @@ def format_comments(comments_and_users) -> (Dict[int, List[int]], Dict[int, Comm
             comment_order, comment_contents, comment_indent_layer = format_comment_contents_and_order(comment, user,
                                                                                                       comment_order,
                                                                                                       comment_contents,
-                                                                                                      comment_indent_layer)
+                                                                                                      comment_indent_layer,
+                                                                                                      post_id)
     return comment_order, comment_contents, comment_indent_layer

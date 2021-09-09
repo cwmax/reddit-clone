@@ -1,0 +1,119 @@
+2021-09-09 13:26:23,987 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 13:27:36,782 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 13:28:57,121 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 13:28:59,728 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:223]
+2021-09-09 13:28:59,735 INFO: existing_value is: None [in /usr/src/app/app/main/routes.py:132]
+2021-09-09 13:29:25,028 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 13:29:26,764 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:239]
+2021-09-09 13:29:26,780 INFO: existing_value is: 0 [in /usr/src/app/app/main/routes.py:132]
+2021-09-09 15:38:43,535 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 15:39:24,132 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:242]
+2021-09-09 15:39:24,145 INFO: existing_value is: 0 [in /usr/src/app/app/main/routes.py:132]
+2021-09-09 15:39:24,147 INFO: new_Value is: -2 [in /usr/src/app/app/main/routes.py:134]
+2021-09-09 15:44:25,191 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 15:44:30,339 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:233]
+2021-09-09 15:44:30,358 INFO: existing_value is: 1 [in /usr/src/app/app/main/routes.py:139]
+2021-09-09 15:44:30,362 INFO: new_Value is: 3 [in /usr/src/app/app/main/routes.py:141]
+2021-09-09 15:44:53,550 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:249]
+2021-09-09 15:44:53,557 INFO: existing_value is: b'3' [in /usr/src/app/app/main/routes.py:139]
+2021-09-09 15:44:53,564 ERROR: Exception on /s/testsite/1/1/downvote-comment [GET] [in /usr/local/lib/python3.7/site-packages/flask/app.py:1455]
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/usr/local/lib/python3.7/site-packages/flask_login/utils.py", line 272, in decorated_view
+    return func(*args, **kwargs)
+  File "/usr/src/app/app/main/routes.py", line 252, in downvote_comment
+    update_comment_vote_cache(post_id, comment_id, vote_change)
+  File "/usr/src/app/app/main/routes.py", line 140, in update_comment_vote_cache
+    new_value = existing_value + increment_value
+TypeError: can't concat int to bytes
+2021-09-09 15:44:55,342 INFO: value_updated: False [in /usr/src/app/app/main/routes.py:249]
+2021-09-09 15:46:17,559 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 15:46:21,699 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:233]
+2021-09-09 15:46:21,713 INFO: existing_value is: 1 [in /usr/src/app/app/main/routes.py:139]
+2021-09-09 15:46:21,720 INFO: new_Value is: 3 [in /usr/src/app/app/main/routes.py:141]
+2021-09-09 15:57:20,764 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 15:57:25,920 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:256]
+2021-09-09 15:58:49,952 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 15:58:52,793 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:243]
+2021-09-09 15:58:52,804 INFO: Updating value 1 into redis from db [in /usr/src/app/app/main/routes.py:133]
+2021-09-09 15:59:10,423 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:259]
+2021-09-09 15:59:10,427 INFO: setting new value -1 into redis [in /usr/src/app/app/main/routes.py:139]
+2021-09-09 16:18:19,951 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:20:43,982 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 18:21:07,504 INFO: redditclone startup [in /Users/maxschallwig/Desktop/Toy Projects/reddit clone/reddit_clone/app/__init__.py:35]
+2021-09-09 18:23:02,981 INFO: redditclone startup [in /Users/maxschallwig/Desktop/Toy Projects/reddit clone/reddit_clone/app/__init__.py:35]
+2021-09-09 18:24:37,381 INFO: redditclone startup [in /Users/maxschallwig/Desktop/Toy Projects/reddit clone/reddit_clone/app/__init__.py:35]
+2021-09-09 16:24:58,808 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:25:12,555 ERROR: Exception on /s/testsite/1/1/upvote-comment [GET] [in /usr/local/lib/python3.7/site-packages/flask/app.py:1455]
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/usr/local/lib/python3.7/site-packages/flask_login/utils.py", line 272, in decorated_view
+    return func(*args, **kwargs)
+  File "/usr/src/app/app/main/routes.py", line 223, in upvote_comment
+    update_comment_vote_cache(post_id, comment_id, vote_change)
+  File "/usr/src/app/app/main/redis_cache_helpers.py", line 39, in update_comment_vote_cache
+    if redis.hexists(name, key):
+AttributeError: module 'redis' has no attribute 'hexists'
+2021-09-09 16:25:44,111 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:26:05,442 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:27:29,758 INFO: value_updated: True [in /usr/src/app/app/main/routes.py:236]
+2021-09-09 16:27:29,850 INFO: Updating value -1 into redis from db [in /usr/src/app/app/main/redis_cache_helpers.py:22]
+2021-09-09 16:27:31,642 INFO: value_updated: False [in /usr/src/app/app/main/routes.py:236]
+2021-09-09 16:28:16,683 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:29:02,954 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:29:43,961 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:31:23,703 INFO: in post page [in /usr/src/app/app/main/routes.py:150]
+2021-09-09 16:31:24,016 INFO: got comments_and_users [in /usr/src/app/app/main/routes.py:157]
+2021-09-09 16:31:24,363 INFO: formatted comments [in /usr/src/app/app/main/routes.py:160]
+2021-09-09 16:31:56,695 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:32:14,752 INFO: in post page [in /usr/src/app/app/main/routes.py:150]
+2021-09-09 16:32:14,840 INFO: got comments_and_users [in /usr/src/app/app/main/routes.py:157]
+2021-09-09 16:32:14,856 ERROR: Exception on /s/testsite/1 [GET] [in /usr/local/lib/python3.7/site-packages/flask/app.py:1455]
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/usr/src/app/app/main/routes.py", line 159, in post_page
+    comment_contents=comment_contents, comment_indent_level=comment_indent_level)
+  File "/usr/src/app/app/main/formatters/comment_formatters.py", line 89, in format_comments
+    comment_indent_layer)
+  File "/usr/src/app/app/main/formatters/comment_formatters.py", line 63, in format_comment_contents_and_order
+    upvote_count = get_comment_final_upvote_count(comment_id)
+TypeError: get_comment_final_upvote_count() missing 1 required positional argument: 'comment_id'
+2021-09-09 16:32:45,794 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]
+2021-09-09 16:34:14,463 ERROR: Exception on /s/testsite/1 [GET] [in /usr/local/lib/python3.7/site-packages/flask/app.py:1455]
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.7/site-packages/flask/app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/usr/src/app/app/main/routes.py", line 156, in post_page
+    comment_order, comment_contents, comment_indent_level = format_comments(comments_and_users, post_id)
+  File "/usr/src/app/app/main/formatters/comment_formatters.py", line 89, in format_comments
+    comment_contents,
+  File "/usr/src/app/app/main/formatters/comment_formatters.py", line 63, in format_comment_contents_and_order
+TypeError: get_comment_final_upvote_count() missing 1 required positional argument: 'comment_id'
+2021-09-09 16:34:27,347 INFO: redditclone startup [in /usr/src/app/app/__init__.py:35]

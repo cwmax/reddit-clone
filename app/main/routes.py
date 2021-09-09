@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Optional
 
 from flask import render_template, redirect, url_for, flash, request
@@ -10,10 +11,11 @@ from app.models import Sites, Posts, Comments, Users, CommentEvents
 from app.main.validators.site_validators import validate_site_name
 from app.main.submit_helpers import add_to_session_and_submit
 from app.main.validators.post_validators import validate_post_site_ids
-from app.main.formatters.comment_formatters import format_comments
-from app import db
+from app.main.formatters.comment_formatters import format_comments, get_comment_final_upvote_count
+from app import db, redis, app
 from app.main.validators.comment_vote_validators import check_user_comment_existing_vote
 from app.main.submit_helpers import submit_and_redirect_or_rollback
+from app.main.redis_cache_helpers import update_comment_vote_cache
 
 
 def validate_new_site_name(site_name):
@@ -120,8 +122,12 @@ def update_comment_event_if_needed(comment_id: int, new_event_value: str) -> (bo
     return True, True
 
 
-def update_comment_vote_cache(comment_id: int, increment_value: int) -> None:
-    pass
+def get_existing_values_if_exists(name: str, key: str) -> Optional[int]:
+    if redis.hexists(name, key):
+        return int(redis.hget(name, key).decode())
+
+    return
+
 
 @bp.route('/')
 @bp.route('/home')
@@ -147,7 +153,7 @@ def post_page(site_name: str, post_id: int):
     # this will be optimized from join instead to cache lookup
     comments_and_users = get_comments_with_user_information_for_posts(post)
 
-    comment_order, comment_contents, comment_indent_level = format_comments(comments_and_users)
+    comment_order, comment_contents, comment_indent_level = format_comments(comments_and_users, post_id)
     return render_template('main/post.html', post_title=post.title, post_content=post.content,
                            site_name=site_name, post_id=post_id, comment_order=comment_order,
                            comment_contents=comment_contents, comment_indent_level=comment_indent_level)
@@ -211,9 +217,10 @@ def upvote_comment(site_name: str, post_id: str, comment_id: str):
     redirect_url = url_for('main.post_page', site_name=site_name, post_id=post_id)
 
     vote_added, value_updated = update_comment_event_if_needed(comment_id, 'upvote')
+
     if value_updated:
         vote_change = 2 if value_updated else 1
-        update_comment_vote_cache(comment_id, vote_change)
+        update_comment_vote_cache(post_id, comment_id, vote_change)
 
     return redirect(redirect_url)
 
@@ -226,9 +233,10 @@ def downvote_comment(site_name: str, post_id: str, comment_id: str):
     redirect_url = url_for('main.post_page', site_name=site_name, post_id=post_id)
 
     vote_added, value_updated = update_comment_event_if_needed(comment_id, 'downvote')
+
     if value_updated:
         vote_change = -2 if value_updated else -1
-        update_comment_vote_cache(comment_id, vote_change)
+        update_comment_vote_cache(post_id, comment_id, vote_change)
 
     return redirect(redirect_url)
 
