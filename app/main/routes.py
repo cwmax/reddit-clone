@@ -1,21 +1,27 @@
 import datetime
-import logging
-from typing import Optional
+import os
+from typing import Optional, List
 
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 
 from app.main.forms import CreateSiteForm, CreatePostForm, CommentForm
 from app.main import bp
-from app.models import Sites, Posts, Comments, Users, CommentEvents
+from app.models import Sites, Posts, Comments, CommentEvents
 from app.main.validators.site_validators import validate_site_name
 from app.main.submit_helpers import add_to_session_and_submit
 from app.main.validators.post_validators import validate_post_site_ids
-from app.main.formatters.comment_formatters import format_comments, get_comment_final_upvote_count
-from app import db, redis, app
+from app.main.formatters.comment_formatters import format_comments
+from app import redis, app
 from app.main.validators.comment_vote_validators import check_user_comment_existing_vote
 from app.main.submit_helpers import submit_and_redirect_or_rollback
-from app.main.redis_cache_helpers import update_comment_vote_cache
+from app.main.redis_cache_helpers import (update_comment_vote_cache,
+                                          get_post_comment_order_and_update_cache_with_comment_information,
+                                          deserialize_and_decompress_data,
+                                          get_comments_user_and_content_for_posts_from_cache,
+                                          add_new_comment_to_comment_cache,
+                                          get_comments_order_for_posts)
+from app.schemas.comments import CommentOrder, CommentUserAndContent
 
 
 def validate_new_site_name(site_name):
@@ -49,14 +55,14 @@ def create_and_submit_new_vote(comment_id: int, event_value: str) -> bool:
     return False
 
 
-def create_and_submit_comment(content, parent_comment_id, post):
+def create_and_submit_comment(content: str, parent_comment_id: id, post: Posts) -> (bool, Comments):
     comment = Comments(content=content,
                        created_at=datetime.datetime.utcnow(),
                        author_id=current_user.id,
                        post_id=post.id,
                        parent_comment_id=parent_comment_id,
                        is_deleted=False)
-    return add_to_session_and_submit(comment, 'submit_comment')
+    return add_to_session_and_submit(comment, 'submit_comment'), comment
 
 
 def create_and_submit_post(site: Sites, form: CreatePostForm) -> (Posts, bool):
@@ -89,14 +95,6 @@ def validate_post_and_site(post: Posts, site: Sites) -> bool:
     return True
 
 
-def get_comments_with_user_information_for_posts(post: Posts) -> Optional[list]:
-    res = db.session.query(Comments, Users).filter_by(post_id=post.id) \
-        .join(Users, Users.id == Comments.author_id) \
-        .order_by(Comments.parent_comment_id.asc(), Comments.created_at.asc()) \
-        .all()
-    return res
-
-
 def update_comment_event_value(res: CommentEvents, new_event_value: str) -> None:
     res.event_value = new_event_value
     res.created_at = datetime.datetime.utcnow()
@@ -124,9 +122,23 @@ def update_comment_event_if_needed(comment_id: int, new_event_value: str) -> (bo
 
 def get_existing_values_if_exists(name: str, key: str) -> Optional[int]:
     if redis.hexists(name, key):
-        return int(redis.hget(name, key).decode())
+        return_val = int(redis.hget(name, key).decode())
+        redis.expire(name, time=int(os.environ.get('REDIS_CACHE_TTL_MS', 24*60*60*1000)))
+        return return_val
 
     return
+
+
+def form_comment_and_user_information(post_comment_order: List[CommentOrder],
+                                      post_comment_user_and_content: List[CommentUserAndContent]) \
+        -> List[CommentUserAndContent]:
+    supplemented_post_comment_user_and_content = [CommentUserAndContent(**{k: uc.dict().get(k)
+                                                                           for k in ['username', 'content',
+                                                                                     'parent_comment_id']
+                                                                           },
+                                                                        id=i.comment_id)
+                                                  for i, uc in zip(post_comment_order, post_comment_user_and_content)]
+    return supplemented_post_comment_user_and_content
 
 
 @bp.route('/')
@@ -150,9 +162,11 @@ def post_page(site_name: str, post_id: int):
     post, site = get_post_and_site(post_id, site_name)
     if not validate_post_and_site(post, site):
         return redirect(url_for('main.site', site_name=site.name))
-    # this will be optimized from join instead to cache lookup
-    comments_and_users = get_comments_with_user_information_for_posts(post)
 
+    post_comment_order = get_comments_order_for_posts(post)
+    post_comment_user_and_content = get_comments_user_and_content_for_posts_from_cache(f'{post.id}_u_c',
+                                                                                       post_comment_order)
+    comments_and_users = form_comment_and_user_information(post_comment_order, post_comment_user_and_content)
     comment_order, comment_contents, comment_indent_level = format_comments(comments_and_users, post_id)
     return render_template('main/post.html', post_title=post.title, post_content=post.content,
                            site_name=site_name, post_id=post_id, comment_order=comment_order,
@@ -188,7 +202,9 @@ def submit_comment(site_name, post_id):
     if form.validate_on_submit():
         content = form.content.data
         redirect_url = url_for('main.post_page', site_name=site_name, post_id=post.id)
-        if create_and_submit_comment(content, parent_comment_id, post):
+        added, comment = create_and_submit_comment(content, parent_comment_id, post)
+        if added:
+            add_new_comment_to_comment_cache(post, comment)
             return redirect(redirect_url)
 
     return render_template('main/submit_comment.html', form=form, post_title=post.title)
@@ -217,8 +233,8 @@ def upvote_comment(site_name: str, post_id: str, comment_id: str):
     redirect_url = url_for('main.post_page', site_name=site_name, post_id=post_id)
 
     vote_added, value_updated = update_comment_event_if_needed(comment_id, 'upvote')
-
-    if value_updated:
+    app.logger.info(f'vote_added: {vote_added}, value_updated: {value_updated}')
+    if vote_added:
         vote_change = 2 if value_updated else 1
         update_comment_vote_cache(post_id, comment_id, vote_change)
 
@@ -234,7 +250,7 @@ def downvote_comment(site_name: str, post_id: str, comment_id: str):
 
     vote_added, value_updated = update_comment_event_if_needed(comment_id, 'downvote')
 
-    if value_updated:
+    if vote_added:
         vote_change = -2 if value_updated else -1
         update_comment_vote_cache(post_id, comment_id, vote_change)
 

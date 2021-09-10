@@ -8,7 +8,7 @@ sys.path.insert(0, myPath + '/../')
 import pytest
 
 from app.models import Comments
-from app.schemas.comments import CommentInfo
+from app.schemas.comments import CommentInfo, CommentUserAndContent
 from .user_fixtures import sample_user, sample_user_2
 
 
@@ -18,6 +18,13 @@ def sample_comment():
         json_comment = json.load(i)
         return Comments(**json_comment)
 
+
+@pytest.fixture
+def sample_user_comment_content(sample_comment, sample_user):
+    return CommentUserAndContent(content=sample_comment.content,
+                                 username=sample_user.user_name,
+                                 id=sample_comment.id,
+                                 parent_comment_id=sample_comment.parent_comment_id)
 
 @pytest.fixture
 def sample_comment_2():
@@ -109,8 +116,6 @@ def sample_comment_contents_multiple_output():
 def sample_comment_contents_nested_output():
     with open('fixtures/sample_comment_contents_nested_output.json') as i:
         return reformat_json_file_comment_contents(i)
-
-
 
 
 def format_json_comment_indent_layer(i: TextIO) -> Dict[int, int]:

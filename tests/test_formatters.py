@@ -17,21 +17,22 @@ from formatters_test_fixtures.comment_fixtures import (sample_comment, sample_co
                                                        sample_comment_contents_nested_output,
                                                        sample_comment_indent_layer_nested_output,
                                                        sample_comment_indent_layer_multiple_output,
-                                                       sample_comment_indent_layer_output)
+                                                       sample_comment_indent_layer_output,
+                                                       sample_user_comment_content)
 
 
-def test_format_comment_contents_and_order(sample_comment, sample_user, sample_comment_order_output,
+def test_format_comment_contents_and_order(sample_user_comment_content, sample_comment_order_output,
                                            sample_comment_contents_output, sample_comment_indent_layer_output):
     comment_order = {}
     comment_contents = {}
     comment_indent_layer = {}
 
     comment_order, comment_contents, comment_indent_layer = comment_formatters.format_comment_contents_and_order(
-        sample_comment,
-        sample_user,
+        sample_user_comment_content,
         comment_order,
         comment_contents,
-        comment_indent_layer)
+        comment_indent_layer,
+        post_id=1)
 
     assert comment_order == sample_comment_order_output
     assert comment_contents == sample_comment_contents_output
@@ -39,7 +40,7 @@ def test_format_comment_contents_and_order(sample_comment, sample_user, sample_c
 
 
 def test_format_comments_empty():
-    comment_order, comment_contents, comment_indent_layer = comment_formatters.format_comments(None)
+    comment_order, comment_contents, comment_indent_layer = comment_formatters.format_comments(None, post_id=1)
     assert comment_order == {}
     assert comment_contents == {}
     assert comment_indent_layer == {}
