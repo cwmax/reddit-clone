@@ -1,16 +1,20 @@
 import os
 import sys
 import datetime
+
 myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../')
+myPath = myPath.split('/tests')[0]
+sys.path.insert(0, myPath)
 
 import pytest
-
+from redis import Redis
 from dotenv import load_dotenv
-load_dotenv('../.env-local-pytests')
+
+load_dotenv(myPath + '/.env-local-pytests')
 
 from app import app, db
 from app.models import Sites, Posts, Comments, Users
+from app.schemas.comments import CommentOrder
 
 
 @pytest.fixture
@@ -23,6 +27,15 @@ def client():
             db.create_all()
             yield client
             db.session.remove()
+
+
+@pytest.fixture
+def redis() -> None:
+    redis = Redis(host=os.environ.get('REDIS_HOST'),
+                  port=os.environ.get('REDIS_PORT'),
+                  db=os.environ.get('REDIS_DB'))
+    yield redis
+    redis.flushdb()
 
 
 @pytest.fixture
@@ -65,7 +78,7 @@ def sample_post() -> Posts:
 @pytest.fixture
 def sample_comment() -> Comments:
     comment = Comments(content='This is some sample content',
-                       created_at=datetime.datetime.utcnow(),
+                       created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),  # fix time for consistent testing
                        author_id=1,
                        post_id=1,
                        parent_comment_id=0,

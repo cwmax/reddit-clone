@@ -3,4 +3,9 @@
 
 {% block app_content %}
     <p><a href="{{ url_for('main.create_site') }}">Create site</a></p>
+
+    {% for site in sites %}
+        <h1>{{site.name}}</h1>
+        <p><a href="{{ url_for('main.subsite', site_name=site.name) }}">Go To Site!</a></p>
+    {% endfor %}
 {% endblock %}

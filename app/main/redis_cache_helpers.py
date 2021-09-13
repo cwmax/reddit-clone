@@ -1,14 +1,42 @@
-import datetime
 import os
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Any
 import pickle
-import snappy
 
+
+import snappy
+import redis.exceptions as redis_exceptions
 from sqlalchemy import text
 
 from app import app, db, redis
 from app.models import Comments, Users, Posts
 from app.schemas.comments import CommentUserAndContent, CommentOrder
+
+
+def get_comments_user_and_content_cache_name(post_id: int) -> str:
+    return f'{post_id}_u_c'
+
+
+def get_comment_order_cache_name(post_id: int) -> str:
+    return f'{post_id}_c_o'
+
+
+def get_user_id_cache_name(user_id: int) -> str:
+    return f'u_{user_id}'
+
+
+def get_comment_upvote_name_and_key(post_id: int, comment_id: int) -> (str, str):
+    name = str(post_id)
+    key = str(comment_id)
+    return name, key
+
+
+def get_upvote_count(name: str, key: str) -> int:
+    redis_value = redis.hget(name, key)
+    if redis_value is None:
+        return insert_value_into_redis_from_db(name, key)
+
+    upvote_count = int(redis_value.decode('utf-8'))
+    return upvote_count
 
 
 def get_post_comment_content_and_order_from_db(post: Posts) -> (Optional[List[tuple]], Optional[List[tuple]]):
@@ -20,15 +48,33 @@ def get_post_comment_content_and_order_from_db(post: Posts) -> (Optional[List[tu
 
 
 def serialize_and_compress_data(data):
+    """pickles and compresses with snappy"""
     pickled_data = pickle.dumps(data)
     compressed_data = snappy.compress(pickled_data)
     return compressed_data
 
 
 def deserialize_and_decompress_data(data):
+    """Decompresses snappy and then deserializes pickled data"""
     decompressed_data = snappy.decompress(data)
     depickled_data = pickle.loads(decompressed_data)
     return depickled_data
+
+
+def check_cache_exists_and_if_decomp_deser(cache_name: str) ->(Optional[Any], bool):
+    if redis.exists(cache_name):
+        compressed_data = redis.get(cache_name)
+        return deserialize_and_decompress_data(compressed_data), True
+    return None, False
+
+
+def get_and_cache_user_id_name_mapping(user_id: int) -> Optional[str]:
+    res = db.session.query(Users.user_name).filter_by(id=int(user_id)).first()
+    username = res[0] if res is not None else None
+
+    user_id_cache_name = get_user_id_cache_name(user_id)
+    redis.set(user_id_cache_name, username)
+    return username
 
 
 def cache_comment_order(name: str, post_comment_user_information: Tuple[tuple, tuple]) -> List[CommentOrder]:
@@ -58,12 +104,11 @@ def cache_comment_user_and_content_information(name: str, post_comment_user_info
 
 
 def get_comments_order_for_posts(post: Posts) -> List[CommentOrder]:
-    comment_order_cache_name = f'{post.id}_c_o'
-    if redis.exists(comment_order_cache_name):
-        compressed_data = redis.get(comment_order_cache_name)
-        return deserialize_and_decompress_data(compressed_data)
-    else:
-        return get_post_comment_order_and_update_cache_with_comment_information(post)
+    comment_order_cache_name = get_comment_order_cache_name(post.id)
+    data, exists = check_cache_exists_and_if_decomp_deser(comment_order_cache_name)
+    if exists:
+        return data
+    return get_post_comment_order_and_update_cache_with_comment_information(post)
 
 
 def get_comments_user_and_content_for_posts_from_cache(name: str, comment_order: List[CommentUserAndContent]) \
@@ -81,11 +126,16 @@ def get_comments_user_and_content_for_posts_from_cache(name: str, comment_order:
 
 
 def get_username_for_user_id(user_id):
-    return db.session.query(Users.user_name).filter_by(id=int(user_id)).first()
+    user_id_cache_name = get_user_id_cache_name(user_id)
+    data, exists = check_cache_exists_and_if_decomp_deser(user_id_cache_name)
+    if exists:
+        return data
+
+    return get_and_cache_user_id_name_mapping(user_id)
 
 
 def add_new_comment_to_comment_cache(post: Posts, comment: Comments):
-    comment_order_cache_name = f'{post.id}_c_o'
+    comment_order_cache_name = get_comment_order_cache_name(post.id)
     comment_order = []
     if redis.exists(comment_order_cache_name):
         compressed_data = redis.get(comment_order_cache_name)
@@ -97,14 +147,12 @@ def add_new_comment_to_comment_cache(post: Posts, comment: Comments):
                 time=int(os.environ.get('REDIS_CACHE_TTL_MS', 24 * 60 * 60 * 1000)),
                 value=snappy_compressed_data)
 
-    comment_user_and_content_cache_name = f'{post.id}_u_c'
+    comment_user_and_content_cache_name = get_comments_user_and_content_cache_name(post.id)
     key = comment.id
-    # TODO: implement caching of user info
-    user_name = get_username_for_user_id(comment.author_id)
 
-    user_name = user_name[0] if user_name is not None else None
+    username = get_username_for_user_id(comment.author_id)
 
-    data = CommentUserAndContent(username=user_name,
+    data = CommentUserAndContent(username=username,
                                  content=comment.content,
                                  parent_comment_id=comment.parent_comment_id)
     snappy_compressed_data = serialize_and_compress_data(data)
@@ -118,14 +166,12 @@ def get_post_comment_order_and_update_cache_with_comment_information(post: Posts
         List[CommentOrder]:
     """
     Gets comment order in asc order from DB and caches it. Also caches comment order, comment content.
-    :param post:
-    :return:
     """
     res = get_post_comment_content_and_order_from_db(post)
     if len(res) > 0:
-        comment_order_cache_name = f'{post.id}_c_o'
+        comment_order_cache_name = get_comment_order_cache_name(post.id)
         comment_order = cache_comment_order(comment_order_cache_name, res)
-        comment_user_and_content_cache_name = f'{post.id}_u_c'
+        comment_user_and_content_cache_name = get_comments_user_and_content_cache_name(post.id)
         cache_comment_user_and_content_information(comment_user_and_content_cache_name, res)
     else:
         comment_order = []
@@ -163,10 +209,19 @@ def get_comment_final_upvote_count_from_db(comment_id: int) -> int:
     return upvotes - downvotes
 
 
+def hset_and_expire_value_in_db(name, key, value):
+    try:
+        redis.hsetnx(name, key, value)
+        redis.expire(name, time=int(os.environ.get('REDIS_CACHE_TTL_MS', 24 * 60 * 60 * 1000)))
+    except redis_exceptions.ConnectionError:
+        app.logger.error(f'Couldn\'t connect to redis db')
+    except Exception as e:
+        app.logger.error(f'Encountered {str(e)} in hset_and_expire_value_in_db')
+
+
 def insert_value_into_redis_from_db(name: str, key: str) -> int:
     current_vote_count = get_comment_final_upvote_count_from_db(int(key))
-    redis.hsetnx(name, key, current_vote_count)
-    redis.expire(name, time=int(os.environ.get('REDIS_CACHE_TTL_MS', 24 * 60 * 60 * 1000)))
+    hset_and_expire_value_in_db(name, key, current_vote_count)
     return current_vote_count
 
 
@@ -178,8 +233,7 @@ def update_value_in_redis(name: str, key: str, increment_value: int) -> None:
 
 
 def update_comment_vote_cache(post_id: int, comment_id: int, increment_value: int) -> None:
-    name = f'{post_id}'
-    key = f'{comment_id}'
+    name, key = get_comment_upvote_name_and_key(post_id, comment_id)
     if redis.hexists(name, key):
         update_value_in_redis(name, key, increment_value)
     else:

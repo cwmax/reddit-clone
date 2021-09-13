@@ -1,29 +1,30 @@
 version: '3.8'
 
 services:
-  web:
-    build: .
-    image: web
-    container_name: web
+  tests:
+    build:
+      dockerfile: tests/Dockerfile
+      context: .
+    image: tests
+    container_name: tests
     ports:
       - 8000:8000
-    command: gunicorn --bind 0.0.0.0:8000 reddit_clone:app
-    # todo, check how many workers to spawn
+    command: pytest
     volumes:
       - .:/usr/src/app
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PW=""
-      - POSTGRES_DB=reddit
+      - POSTGRES_DB=reddit_pytest
       - POSTGRES_HOST=docker.for.mac.localhost:5432
-      - REDIS_HOST=myredisdb  # note this matches name below
+      - REDIS_HOST=myredispytestdb
       - REDIS_PORT=6379
       - REDIS_DB=0
       - REDIS_CACHE_TTL_MS=86_400_000
     depends_on:
-      - myredisdb
+      - myredispytestdb
 
-  myredisdb:
+  myredispytestdb:
     ports:
       - 6379:6379
     image: redis:6-alpine

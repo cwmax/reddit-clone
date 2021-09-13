@@ -2,9 +2,12 @@ import json
 import os
 import sys
 myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../')
+myPath = myPath.split('/tests')[0]
+sys.path.insert(0, myPath)
 
 import pytest
+from dotenv import load_dotenv
+load_dotenv(myPath+'/.env-local-pytests')
 
 from app.models import Users
 

@@ -4,4 +4,9 @@
 {% block app_content %}
     <h1>Welcome to {{site_name}}</h1>
     <p><a href="{{ url_for('main.submit_post', site_name=site_name) }}">Click to Submit a new Post!</a></p>
+
+    {% for post in posts %}
+        <h1>{{post.title}}</h1>
+        <p><a href="{{ url_for('main.post_page', site_name=site_name, post_id=post.id) }}">Go To Post!</a></p>
+    {% endfor %}
 {% endblock %}

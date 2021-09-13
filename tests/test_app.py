@@ -3,11 +3,17 @@ import sys
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
+from dotenv import load_dotenv
+myPath = myPath.split('/tests')[0]
+load_dotenv(myPath+'/.env-local-pytests')
+
 from app.main.routes import create_and_submit_site, add_to_session_and_submit
 from app.models import Sites, Posts, Comments, Users
 from app.auth.routes import create_and_submit_user
 from app_test_fixtures.app_test_fixtures import (sample_comment, client, clean_up_db, sample_site,
                                                  sample_post, sample_user)
+
+
 
 
 def test_empty_db(client):

@@ -2,13 +2,19 @@ import json
 from typing import TextIO, Dict, List
 import os
 import sys
+import datetime
+
 myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../')
+myPath = myPath.split('/tests')[0]
+sys.path.insert(0, myPath)
 
 import pytest
+from dotenv import load_dotenv
 
-from app.models import Comments
-from app.schemas.comments import CommentInfo, CommentUserAndContent
+load_dotenv(myPath + '/.env-local-pytests')
+
+from app.models import Comments, CommentEvents
+from app.schemas.comments import CommentInfo, CommentUserAndContent, CommentOrder
 from .user_fixtures import sample_user, sample_user_2
 
 
@@ -25,6 +31,7 @@ def sample_user_comment_content(sample_comment, sample_user):
                                  username=sample_user.user_name,
                                  id=sample_comment.id,
                                  parent_comment_id=sample_comment.parent_comment_id)
+
 
 @pytest.fixture
 def sample_comment_2():
@@ -60,11 +67,31 @@ def comments_and_users_multiple(sample_comment, sample_comment_2, sample_user, s
 
 
 @pytest.fixture
+def comments_and_users_multiple_reformatted(comments_and_users_multiple):
+    comment_user_and_content = [CommentUserAndContent(username=u.user_name,
+                                                      content=c.content,
+                                                      parent_comment_id=c.parent_comment_id,
+                                                      id=c.id)
+                                for c, u in comments_and_users_multiple]
+    return comment_user_and_content
+
+
+@pytest.fixture
 def comments_and_users_nested(sample_comment, sample_comment_2, sample_user, sample_user_2,
                               sample_comment_nested_1, sample_comment_nested_2, sample_comment_nested_3):
     return [(sample_comment, sample_user), (sample_comment_2, sample_user_2),
             (sample_comment_nested_1, sample_user_2), (sample_comment_nested_2, sample_user),
             (sample_comment_nested_3, sample_user_2)]
+
+
+@pytest.fixture
+def comment_and_users_nested_reformatted(comments_and_users_nested):
+    comment_user_and_content = [CommentUserAndContent(username=u.user_name,
+                                                      content=c.content,
+                                                      parent_comment_id=c.parent_comment_id,
+                                                      id=c.id)
+                                for c, u in comments_and_users_nested]
+    return comment_user_and_content
 
 
 def format_json_comment_order(i: TextIO) -> Dict[int, List[int]]:
@@ -76,9 +103,39 @@ def format_json_comment_order(i: TextIO) -> Dict[int, List[int]]:
 
 
 @pytest.fixture
+def sample_comment_order() -> List[CommentOrder]:
+    comment_order = [CommentOrder(comment_id=1,
+                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14))]
+    return comment_order
+
+
+@pytest.fixture
+def sample_comment_upvote() -> CommentEvents:
+    comment_event = CommentEvents(id=1,
+                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),
+                                  event_name='vote',
+                                  user_id=1,
+                                  comment_id=1,
+                                  event_value='upvote')
+    return comment_event
+
+
+@pytest.fixture
+def sample_comment_downvote() -> CommentEvents:
+    comment_event = CommentEvents(id=1,
+                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),
+                                  event_name='vote',
+                                  user_id=1,
+                                  comment_id=1,
+                                  event_value='downvote')
+    return comment_event
+
+
+@pytest.fixture
 def sample_comment_order_output():
     with open('fixtures/sample_comment_order_output.json') as i:
         return format_json_comment_order(i)
+
 
 @pytest.fixture
 def sample_comment_order_multiple_output():
