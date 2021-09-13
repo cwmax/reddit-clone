@@ -18,6 +18,13 @@ from app.schemas.comments import CommentInfo, CommentUserAndContent, CommentOrde
 from .user_fixtures import sample_user, sample_user_2
 
 
+@pytest.fixture(scope='module')
+def reuseable_timestamp():
+    timestamp = datetime.datetime.utcnow()
+    print(timestamp)
+    return timestamp
+
+
 @pytest.fixture
 def sample_comment():
     with open('fixtures/sample_comment.json') as i:
@@ -103,16 +110,16 @@ def format_json_comment_order(i: TextIO) -> Dict[int, List[int]]:
 
 
 @pytest.fixture
-def sample_comment_order() -> List[CommentOrder]:
+def sample_comment_order(reuseable_timestamp) -> List[CommentOrder]:
     comment_order = [CommentOrder(comment_id=1,
-                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14))]
+                                  created_at=reuseable_timestamp)]
     return comment_order
 
 
 @pytest.fixture
-def sample_comment_upvote() -> CommentEvents:
+def sample_comment_upvote(reuseable_timestamp) -> CommentEvents:
     comment_event = CommentEvents(id=1,
-                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),
+                                  created_at=reuseable_timestamp,
                                   event_name='vote',
                                   user_id=1,
                                   comment_id=1,
@@ -121,9 +128,9 @@ def sample_comment_upvote() -> CommentEvents:
 
 
 @pytest.fixture
-def sample_comment_downvote() -> CommentEvents:
+def sample_comment_downvote(reuseable_timestamp) -> CommentEvents:
     comment_event = CommentEvents(id=1,
-                                  created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),
+                                  created_at=reuseable_timestamp,
                                   event_name='vote',
                                   user_id=1,
                                   comment_id=1,

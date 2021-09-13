@@ -15,6 +15,7 @@ load_dotenv(myPath + '/.env-local-pytests')
 from app import app, db
 from app.models import Sites, Posts, Comments, Users
 from app.schemas.comments import CommentOrder
+from tests.formatters_test_fixtures.comment_fixtures import reuseable_timestamp
 
 
 @pytest.fixture
@@ -76,9 +77,9 @@ def sample_post() -> Posts:
 
 
 @pytest.fixture
-def sample_comment() -> Comments:
+def sample_comment(reuseable_timestamp) -> Comments:
     comment = Comments(content='This is some sample content',
-                       created_at=datetime.datetime(2021, 7, 1, 12, 13, 14),  # fix time for consistent testing
+                       created_at=reuseable_timestamp,
                        author_id=1,
                        post_id=1,
                        parent_comment_id=0,

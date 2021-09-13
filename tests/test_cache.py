@@ -16,7 +16,8 @@ from app.main.redis_cache_helpers import (add_new_comment_to_comment_cache, chec
 from app.main.formatters.comment_formatters import get_comment_final_upvote_count
 from app_test_fixtures.app_test_fixtures import (redis, clean_up_db, sample_site,
                                                  sample_post, sample_user, sample_comment)
-from formatters_test_fixtures.comment_fixtures import (sample_comment_order, sample_comment_upvote, sample_comment_downvote)
+from formatters_test_fixtures.comment_fixtures import (sample_comment_order, sample_comment_upvote,
+                                                       sample_comment_downvote, reuseable_timestamp)
 
 
 def add_site_user_post_comment(sample_site, sample_user, sample_post, sample_comment):
