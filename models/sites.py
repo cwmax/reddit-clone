@@ -17,13 +17,13 @@ class UserSiteFollows(Base):
     __tablename__ = 'user_site_follows'
     id = Column(Integer, autoincrement=True, primary_key=True)
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow, nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    site_id = Column(Integer, ForeignKey('sites.id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    site_id = Column(Integer, nullable=False)
 
 
 class UserSiteAdmins(Base):
     __tablename__ = 'user_site_admins'
     __tableargs__ = (UniqueConstraint('user_id', 'site_id', name='user_id_site_id_unique'),)
     id = Column(Integer, autoincrement=True, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    site_id = Column(Integer, ForeignKey('sites.id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    site_id = Column(Integer, nullable=False)

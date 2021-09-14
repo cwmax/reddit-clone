@@ -5,7 +5,7 @@ import sys
 import datetime
 
 myPath = os.path.dirname(os.path.abspath(__file__))
-myPath = myPath.split('/tests')[0]
+myPath = myPath.split('/main_app_tests')[0]
 sys.path.insert(0, myPath)
 
 import pytest

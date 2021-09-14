@@ -6,7 +6,7 @@ sys.path.insert(0, myPath + '/../')
 
 from dotenv import load_dotenv
 
-myPath = myPath.split('/tests')[0]
+myPath = myPath.split('/main_app_tests')[0]
 load_dotenv(myPath + '/.env-local-pytests')
 
 from app.main.routes import add_to_session_and_submit

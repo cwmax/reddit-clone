@@ -3,12 +3,10 @@ version: '3.8'
 services:
   tests:
     build:
-      dockerfile: tests/Dockerfile
+      dockerfile: main_app_tests/Dockerfile
       context: .
     image: tests
     container_name: tests
-    ports:
-      - 8000:8000
     command: pytest
     volumes:
       - .:/usr/src/app
@@ -28,3 +26,4 @@ services:
     ports:
       - 6379:6379
     image: redis:6-alpine
+

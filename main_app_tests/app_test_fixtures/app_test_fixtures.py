@@ -3,7 +3,7 @@ import sys
 import datetime
 
 myPath = os.path.dirname(os.path.abspath(__file__))
-myPath = myPath.split('/tests')[0]
+myPath = myPath.split('/main_app_tests')[0]
 sys.path.insert(0, myPath)
 
 import pytest
@@ -21,7 +21,7 @@ from tests.formatters_test_fixtures.comment_fixtures import reuseable_timestamp
 @pytest.fixture
 def client():
     # For this to work properly the DB needs to exist beforehand, so make sure to set the env
-    # variables to a local testing db and run `alembic upgrade head` before the tests
+    # variables to a local testing db and run `alembic upgrade head` before the main_app_tests
     with app.test_client() as client:
         with app.app_context():
             db.drop_all()

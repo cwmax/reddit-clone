@@ -4,7 +4,7 @@ myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
 from dotenv import load_dotenv
-myPath = myPath.split('/tests')[0]
+myPath = myPath.split('/main_app_tests')[0]
 load_dotenv(myPath+'/.env-local-pytests')
 
 from app.main.routes import create_and_submit_site, add_to_session_and_submit
@@ -15,6 +15,12 @@ from app_test_fixtures.app_test_fixtures import (sample_comment, client, clean_u
 from formatters_test_fixtures.comment_fixtures import reuseable_timestamp
 
 
+
+# General note on testing when you find bugs
+# 1) write a test that demonstrates the bug
+# 2) Make the fix
+# 3) Have the test verify the fix
+# 4) push changes
 
 def test_empty_db(client):
     rv = client.get('/')
