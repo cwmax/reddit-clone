@@ -28,7 +28,7 @@ async def disconnect_db(db_disconnect_callable: Callable):
     raise e
 
 
-async def startup_events() -> Callable:
+def startup_events() -> Callable:
 
     async def start_application() -> None:
         await connect_to_db(db.connect)
@@ -36,7 +36,7 @@ async def startup_events() -> Callable:
     return start_application
 
 
-async def shutdown_events() -> Callable:
+def shutdown_events() -> Callable:
 
     async def shutdown_application() -> None:
         await disconnect_db(db.disconnect)

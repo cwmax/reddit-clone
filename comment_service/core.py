@@ -4,6 +4,8 @@ from databases import Database
 from aioredis import Redis
 
 from .config import Config
+from comment_service.db.redis_cache.redis_cache_helper import RedisCacheHelper
+
 
 config = Config()
 
@@ -27,4 +29,5 @@ def get_redis_cache():
         db=os.environ.get('REDIS_DB'),
         max_connections=os.environ.get('MAX_REDIS_CONNECTIONS', 10),
     )
-    return redis
+    redis_cache = RedisCacheHelper(redis)
+    return redis_cache

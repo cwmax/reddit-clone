@@ -3,7 +3,7 @@ from comment_service.core import get_database, get_redis_cache
 from comment_service.db.redis_cache.redis_cache_helper import RedisCacheHelper
 
 db = get_database()
-redis_cache = RedisCacheHelper(get_redis_cache())
+redis_cache = get_redis_cache()
 
 
 def get_application() -> FastAPI:
