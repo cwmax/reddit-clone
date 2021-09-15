@@ -53,6 +53,17 @@ def sample_comment_2(reuseable_timestamp_2):
 
 
 @pytest.fixture
+def sample_comment_3(reuseable_timestamp_2):
+    sample_comment_3 = CommentInfo(created_at=reuseable_timestamp_2 + datetime.timedelta(seconds=2),
+                                   author_id=11,
+                                   content="test comment 4",
+                                   post_id=1,
+                                   parent_comment_id=1,
+                                   is_deleted=False)
+    return sample_comment_3
+
+
+@pytest.fixture
 def sample_comment_order(reuseable_timestamp, reuseable_timestamp_2):
     sample_comment_order = [CommentOrder(comment_id=1, created_at=reuseable_timestamp),
                             CommentOrder(comment_id=2, created_at=reuseable_timestamp_2)]
@@ -76,4 +87,10 @@ def sample_comment_content_response(sample_comment, sample_comment_2) -> Dict[st
 @pytest.fixture
 def sample_comment_indent_levels() -> Dict[str, CommentInfoResponse]:
     sample_comment_indent_levels = {'0': 0, '1': 1, '2': 1}
+    return sample_comment_indent_levels
+
+
+@pytest.fixture
+def sample_comment_indent_levels_layered() -> Dict[str, CommentInfoResponse]:
+    sample_comment_indent_levels = {'0': 0, '1': 1, '2': 1, '3': 2}
     return sample_comment_indent_levels

@@ -20,7 +20,9 @@ from comment_service_tests.fixtures.comment_fixtures import (sample_comment, reu
                                                              sample_comment_response, sample_comment_2,
                                                              reuseable_timestamp_2, sample_comment_order,
                                                              sample_comment_content_response, sample_comment_contents,
-                                                             sample_comment_indent_levels)
+                                                             sample_comment_indent_levels,
+                                                             sample_comment_indent_levels_layered,
+                                                             sample_comment_3)
 from comment_service_tests.app_fixtures import event_loop, db_client
 from comment_service.core import get_redis_cache
 from comment_service.main import db
@@ -191,6 +193,20 @@ async def test_get_comment_indent_level(db_client, sample_comment, sample_commen
         comment_contents = await load_and_cache_comment_content(sample_comment.post_id)
         comment_indent_levels = get_comment_indent_level(comment_contents)
         assert comment_indent_levels == sample_comment_indent_levels
+
+
+@pytest.mark.asyncio
+async def test_get_comment_indent_level_layered(db_client, sample_comment, sample_comment_2, sample_comment_3,
+                                                sample_comment_indent_levels_layered):
+    query = comments.insert()
+
+    async with db.transaction(force_rollback=True):
+        await db.execute_many(query=query, values=[sample_comment.dict(), sample_comment_2.dict(),
+                                                   sample_comment_3.dict()])
+
+        comment_contents = await load_and_cache_comment_content(sample_comment.post_id)
+        comment_indent_levels = get_comment_indent_level(comment_contents)
+        assert comment_indent_levels == sample_comment_indent_levels_layered
 
 # get_comment_order(post_id)
 #     comment_content = await get_comment_content(comment_order)
