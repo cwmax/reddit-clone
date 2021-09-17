@@ -3,7 +3,7 @@ import datetime
 
 import pytest
 from comment_service.schemas.comments import (CommentInfo, CommentModel, CommentOrder, CommentInfoCache,
-                                              CommentInfoResponse)
+                                              CommentInfoResponse, CommentVote, CommentEventDBEntry)
 
 
 @pytest.fixture(scope='module')
@@ -53,6 +53,32 @@ def sample_comment_2(reuseable_timestamp_2):
 
 
 @pytest.fixture
+def sample_comment_order(reuseable_timestamp):
+    comment_order = CommentOrder(comment_id=1,
+                 created_at=reuseable_timestamp)
+    return comment_order
+
+
+@pytest.fixture
+def sample_comment_order_multiple(reuseable_timestamp, reuseable_timestamp_2):
+    comment_order = [CommentOrder(comment_id=1,
+                 created_at=reuseable_timestamp), CommentOrder(comment_id=2,
+                 created_at=reuseable_timestamp_2)]
+    return comment_order
+
+
+@pytest.fixture
+def sample_comment_order_multiple_3(reuseable_timestamp, reuseable_timestamp_2):
+    comment_order = [CommentOrder(comment_id=1,
+                 created_at=reuseable_timestamp), CommentOrder(comment_id=2,
+                 created_at=reuseable_timestamp_2), CommentOrder(comment_id=3,
+                 created_at=reuseable_timestamp_2 + datetime.timedelta(seconds=2))]
+    return comment_order
+
+
+
+
+@pytest.fixture
 def sample_comment_3(reuseable_timestamp_2):
     sample_comment_3 = CommentInfo(created_at=reuseable_timestamp_2 + datetime.timedelta(seconds=2),
                                    author_id=11,
@@ -79,8 +105,8 @@ def sample_comment_contents(sample_comment, sample_comment_2) -> List[CommentInf
 
 @pytest.fixture
 def sample_comment_content_response(sample_comment, sample_comment_2) -> Dict[str, CommentInfoResponse]:
-    sample_comment_content_response = {'1': CommentInfoResponse(username='1', **sample_comment.dict()),
-                                       '2': CommentInfoResponse(username='3', **sample_comment_2.dict())}
+    sample_comment_content_response = {'1': CommentInfoResponse(username='1', **sample_comment.dict(), upvote_count=0),
+                                       '2': CommentInfoResponse(username='3', **sample_comment_2.dict(), upvote_count=0)}
     return sample_comment_content_response
 
 
@@ -94,3 +120,19 @@ def sample_comment_indent_levels() -> Dict[str, CommentInfoResponse]:
 def sample_comment_indent_levels_layered() -> Dict[str, CommentInfoResponse]:
     sample_comment_indent_levels = {'0': 0, '1': 1, '2': 1, '3': 2}
     return sample_comment_indent_levels
+
+
+@pytest.fixture
+def sample_upvote() -> CommentVote:
+    sample_upvote = CommentVote(user_id=1,
+                                vote='upvote',
+                                post_id=1)
+    return sample_upvote
+
+
+@pytest.fixture
+def sample_downvote() -> CommentVote:
+    sample_downvote = CommentVote(user_id=1,
+                                  vote='downvote',
+                                  post_id=1)
+    return sample_downvote

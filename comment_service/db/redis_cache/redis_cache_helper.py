@@ -34,12 +34,13 @@ class RedisCacheHelper():
             await self.redis.hset(name, key, compressed_data)
             await self.redis.expire(name, self.ttl)
         else:
-            if len(mapping) == 0:
-                return
             compressed_data = self.commpress_and_ser_mapping(mapping)
             await self.redis.hset(name, mapping=compressed_data)
             await self.redis.expire(name, self.ttl)
 
+    async def hsetraw(self, name, key=None, value=None, mapping=None):
+        await self.redis.hset(name, key, value, mapping)
+        await self.redis.expire(name, self.ttl)
 
     async def hget(self, name, key):
         value = await self.redis.hget(name, key)
@@ -49,13 +50,45 @@ class RedisCacheHelper():
             await self.redis.expire(name, self.ttl)
         return data
 
+    async def hexists(self, name, key):
+        return await self.redis.hexists(name, key)
+
+    async def exists(self, name):
+        return await self.redis.exists(name)
+
+    async def hgetraw(self, name, key=None):
+        val = await self.redis.hget(name, key)
+        await self.redis.expire(name, self.ttl)
+        if val is not None:
+            val = val.decode('utf-8')
+        return val
+
     async def hgetall(self, name):
         values = await self.redis.hgetall(name)
         data = {}
         if len(values) > 0:
             for key in values:
-                data[key] = self.deserialize_and_decompress_data(values[key])
+                data[key.decode('utf-8')] = self.deserialize_and_decompress_data(values[key])
             await self.redis.expire(name, self.ttl)
+        return data
+
+    async def hgetallraw(self, name):
+        values = await self.redis.hgetall(name)
+        data = {}
+        if len(values) > 0:
+            for key in values:
+                data[key.decode('utf-8')] = values[key].decode('utf-8')
+            await self.redis.expire(name, self.ttl)
+        return data
+
+    async def hmget(self, name, keys):
+        values = await self.redis.hmget(name, keys=keys)
+        data = {}
+        for key, value in zip(keys, values):
+            if value is None:
+                continue
+            data[key] = self.deserialize_and_decompress_data(value)
+        await self.redis.expire(name, self.ttl)
         return data
 
     async def set(self, name, value):
@@ -70,3 +103,6 @@ class RedisCacheHelper():
             data = self.deserialize_and_decompress_data(value)
             await self.redis.expire(name, self.ttl)
         return data
+
+    async def hincrby(self, name, key, value):
+        return await self.redis.hincrby(name, key, value)

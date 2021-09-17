@@ -25,6 +25,30 @@ services:
     depends_on:
       - myredisdb
 
+  comment_service:
+    build:
+      context: .
+      dockerfile: comment_service/Dockerfile
+    image: comment_service
+    container_name: comment_service
+    ports:
+      - 8080:8080
+    command: uvicorn --host 0.0.0.0 --port 8080 comment_service.main:app
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PW=""
+      - POSTGRES_DB=reddit
+      - POSTGRES_HOST=docker.for.mac.localhost:5432
+      - POSTGRES_URI=postgresql://postgres:@docker.for.mac.localhost:5432/reddit
+      - REDIS_HOST=myredisdb  # note this matches name below
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_CACHE_TTL_MS=86_400_000
+    depends_on:
+      - myredisdb
+
   myredisdb:
     ports:
       - 6379:6379

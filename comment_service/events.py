@@ -1,9 +1,8 @@
 import os
 from typing import Callable
 from asyncio import sleep
-from fastapi import FastAPI
 
-from comment_service.main import db
+from comment_service.main import db, app
 
 
 async def connect_to_db(db_connect_callable: Callable):
@@ -28,17 +27,13 @@ async def disconnect_db(db_disconnect_callable: Callable):
     raise e
 
 
-def startup_events() -> Callable:
-
-    async def start_application() -> None:
-        await connect_to_db(db.connect)
-
-    return start_application
+@app.on_event("startup")
+async def startup_events():
+    await db.connect()
+    # await connect_to_db(db.connect)
 
 
-def shutdown_events() -> Callable:
-
-    async def shutdown_application() -> None:
-        await disconnect_db(db.disconnect)
-
-    return shutdown_application
+@app.on_event("shutdown")
+async def shutdown_events():
+    await db.disconnect()
+    # await disconnect_db(db.disconnect)

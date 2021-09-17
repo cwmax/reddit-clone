@@ -18,7 +18,7 @@ def get_comment_final_upvote_count(post_id: int, comment_id: int) -> int:
         app.logger.error(f'Encountered unhandled exception {e}')
 
 
-def format_comment_contents_and_order(comment_user_info: CommentUserAndContent,
+def format_comment_contents_and_order(comment_user_info: CommentInfo,
                                       comment_order: Dict[int, List[int]],
                                       comment_contents: Dict[int, CommentInfo],
                                       comment_indent_layer: Dict[int, int],
@@ -28,32 +28,32 @@ def format_comment_contents_and_order(comment_user_info: CommentUserAndContent,
         -> (Dict[int, List[int]], Dict[int, CommentInfo]):
     comment_id = comment_user_info.id
     parent_comment_id = comment_user_info.parent_comment_id
-    # TODO: implement cache here
-    user_comment_upvote = None
-    if user_authenticated:
-        res, ok = check_user_comment_existing_vote(comment_id, user_id)
 
-        if ok:
-            user_comment_upvote = True if res.event_value == 'upvote' else False
-
-    upvote_count = get_comment_final_upvote_count(post_id, comment_id)
-    commentContent = CommentInfo(username=comment_user_info.username,
-                                 content=comment_user_info.content,
-                                 parent_comment_id=comment_user_info.parent_comment_id,
-                                 upvote_count=upvote_count,
-                                 user_comment_upvote=user_comment_upvote)
+    # user_comment_upvote = None
+    # if user_authenticated:
+    #     res, ok = check_user_comment_existing_vote(comment_id, user_id)
+    #
+    #     if ok:
+    #         user_comment_upvote = True if res.event_value == 'upvote' else False
+    #
+    # upvote_count = get_comment_final_upvote_count(post_id, comment_id)
+    # commentContent = CommentInfo(username=comment_user_info.username,
+    #                              content=comment_user_info.content,
+    #                              parent_comment_id=comment_user_info.parent_comment_id,
+    #                              upvote_count=upvote_count,
+    #                              user_comment_upvote=user_comment_upvote)
 
     comment_order.setdefault(parent_comment_id, [])
     comment_indent_layer.setdefault(parent_comment_id, 0)
 
     comment_order[parent_comment_id].append(comment_id)
-    comment_contents[comment_id] = commentContent
+    comment_contents[comment_id] = comment_user_info
     comment_indent_layer[comment_id] = comment_indent_layer[parent_comment_id] + 1
 
     return comment_order, comment_contents, comment_indent_layer
 
 
-def format_comments(comments_and_users: List[CommentUserAndContent], post_id: int,
+def format_comments(comments_and_users: List[CommentInfo], post_id: int,
                     user_authenticated: bool, user_id: int) \
         -> (Dict[int, List[int]], Dict[int, CommentInfo], Dict[int, int]):
     comment_order = {}
@@ -71,9 +71,9 @@ def format_comments(comments_and_users: List[CommentUserAndContent], post_id: in
 
 
 def form_comment_and_user_information(post_comment_order: List[CommentOrder],
-                                      post_comment_user_and_content: List[CommentUserAndContent]) \
-        -> List[CommentUserAndContent]:
-    supplemented_post_comment_user_and_content = [CommentUserAndContent(**{k: uc.dict().get(k)
+                                      post_comment_user_and_content: List[CommentInfo]) \
+        -> List[CommentInfo]:
+    supplemented_post_comment_user_and_content = [CommentInfo(**{k: uc.dict().get(k)
                                                                            for k in ['username', 'content',
                                                                                      'parent_comment_id']
                                                                            },
