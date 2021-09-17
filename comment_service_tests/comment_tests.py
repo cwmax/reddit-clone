@@ -12,7 +12,7 @@ load_dotenv(myPath + '/.env-local-pytests')
 
 import pytest
 
-from app_fixtures import client
+from app_fixtures import client, event_loop, db_client
 from comment_service.db.crud.comments import (insert_comment_into_db, get_comment_from_db_with_comment_id,
                                               get_comment_from_db_with_comment_info, insert_and_cache_comment,
                                               get_comment_order_from_db, insert_or_update_vote_in_db)
@@ -24,7 +24,6 @@ from comment_service_tests.fixtures.comment_fixtures import (sample_comment, reu
                                                              sample_comment_indent_levels_layered,
                                                              sample_comment_3, sample_upvote, sample_downvote,
                                                              sample_comment_order_multiple, sample_comment_order_multiple_3)
-from comment_service_tests.app_fixtures import event_loop, db_client
 from comment_service.core import get_redis_cache
 from comment_service.main import db
 from comment_service.schemas.comments import CommentInfo, CommentInfoCache

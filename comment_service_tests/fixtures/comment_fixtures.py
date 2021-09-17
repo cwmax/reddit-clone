@@ -98,8 +98,8 @@ def sample_comment_order(reuseable_timestamp, reuseable_timestamp_2):
 
 @pytest.fixture
 def sample_comment_contents(sample_comment, sample_comment_2) -> List[CommentInfoCache]:
-    sample_comment_contents = {1: CommentInfoCache(**sample_comment.dict()),
-                               2: CommentInfoCache(**sample_comment_2.dict())}
+    sample_comment_contents = {'1': CommentInfoCache(**sample_comment.dict()),
+                               '2': CommentInfoCache(**sample_comment_2.dict())}
     return sample_comment_contents
 
 

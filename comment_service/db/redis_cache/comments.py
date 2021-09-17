@@ -81,7 +81,7 @@ async def get_all_comment_contents(post_id: int, comment_id: int, comment_order:
     if len(keys) > 0:
         comment_contents = await redis_cache.hmget(name, keys)
     if len(comment_contents) > 0:
-        comment_contents_map = {int(x): CommentInfoCache(**comment_contents[x]) for x in comment_contents}
+        comment_contents_map = {x: CommentInfoCache(**comment_contents[x]) for x in comment_contents}
     return comment_contents_map
 
 

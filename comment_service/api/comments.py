@@ -7,6 +7,8 @@ from comment_service.db.comments import (load_and_cache_comment_order, load_and_
                                          set_or_update_comment_vote_in_cache)
 from comment_service.utils.comments import get_comment_indent_level
 from comment_service.db.redis_cache.comments import (set_user_vote_in_cache)
+from comment_service.main import redis_cache
+
 
 router = APIRouter()
 
@@ -28,11 +30,9 @@ async def get_comment(comment_id: int):
 async def get_post_comments(post_id: int, user_id: int):
     comment_order = await load_and_cache_comment_order(post_id)
     comment_content = await load_and_cache_comment_content(post_id, user_id, comment_order)
-    comment_indent_level = get_comment_indent_level(comment_content)
+    # comment_indent_level = get_comment_indent_level(comment_content)
 
-    post_comment_response = PostCommentResponse(comment_order=comment_order,
-                                                comment_content=comment_content,
-                                                comment_indent=comment_indent_level)
+    post_comment_response = PostCommentResponse(comment_content=comment_content)
     return post_comment_response
 
 
@@ -44,3 +44,8 @@ async def vote_comment(comment_id: int, vote: CommentVote):
         await insert_or_update_vote_in_db(current_user_vote, vote, comment_id)
         await set_user_vote_in_cache(vote, comment_id)
         await set_or_update_comment_vote_in_cache(vote_change_val, comment_id, vote.post_id)
+
+
+@router.get('/flushdb')
+async def flush_db():
+    await redis_cache.redis.flushdb()

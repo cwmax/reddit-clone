@@ -41,9 +41,7 @@ class CommentModel(CommentInfo):
 
 
 class PostCommentResponse(BaseModel):
-    comment_order: List[CommentOrder]
     comment_content: Dict[int, CommentInfoResponse]
-    comment_indent: Dict[int, int]
 
 
 class CommentVote(BaseModel):

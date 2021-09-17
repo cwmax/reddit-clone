@@ -160,23 +160,13 @@ def post_page(site_name: str, post_id: int):
         user_id = 0
     app.logger.info(f'user_authenticated: {user_authenticated}')
     app.logger.info(f'user_id: {user_id}')
-    # post_comment_order = get_comments_order_for_posts(post)
-    #
-    # comment_user_and_content_cache_name = get_comments_user_and_content_cache_name(post.id)
-    # post_comment_user_and_content = get_comments_user_and_content_for_posts_from_cache(
-    #     comment_user_and_content_cache_name,
-    #     post_comment_order)
-    #
 
     response_value = requests.get(f'http://comment_service:8080/get-post-comments/{post_id}/{user_id}').json()
-    comment_order = [CommentOrder(**x) for x in response_value.get('comment_order')]
     comment_contents = response_value.get('comment_content')
     comment_contents = [CommentInfo(id=int(x), **comment_contents[x],
                                     user_comment_upvote=comment_contents[x].get('user_upvoted')) for x in
                         comment_contents]
-    # comment_indent_level = response_value.get('comment_indent')
 
-    # comments_and_users = form_comment_and_user_information(comment_order, comment_contents)
     comment_order, comment_contents, comment_indent_level = format_comments(comment_contents, post_id,
                                                                             user_authenticated, user_id)
     return render_template('main/post.html', post_title=post.title, post_content=post.content,

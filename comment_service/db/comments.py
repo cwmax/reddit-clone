@@ -70,6 +70,7 @@ async def join_comment_content_and_votes(comment_votes: Dict[str, int],
     for comment_id in comment_contents:
         comment_ids.append(comment_id)
         comment_vote = comment_votes.get(comment_id, 0)
+
         tasks.append(asyncio.create_task(check_user_vote_exists_cache_and_db(user_id=user_id,
                                                                              comment_id=int(comment_id),
                                                                              post_id=comment_contents[comment_id].post_id)))

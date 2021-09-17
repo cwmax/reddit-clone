@@ -40,7 +40,7 @@ def aggregate_multiple_comment_votes(res) -> Dict[str, int]:
     final_score = {}
     for r in res:
         record = dict(zip(r._mapping.keys(), r._mapping.values()))
-        comment_id = record.get('comment_id')
+        comment_id = str(record.get('comment_id'))
         final_score.setdefault(comment_id, 0)
         event_value = record.get('event_value')
         count = record.get('count')
